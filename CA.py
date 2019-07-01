@@ -9,8 +9,9 @@ Edits done by:
 """
 
 import math
-import sys
 import random
+import numpy as np
+import pandas as pd
 
 
 def bin_to_dec(bin_string):
@@ -69,6 +70,64 @@ def dec_to_bin(num, nbits=8):
         else:
             bin.append(0)
     return bin[::-1]
+
+
+def ensemble_to_df(rule_num, radius, ensemble, config_length, ngens):
+    """
+    Applies a given rule to an ensemble (set of configurations)
+    and records the result as a data frame. 
+
+    Args:
+        rule_num: The CA rule number
+        radius: The neighborhood in which the CA evolves
+        ensemble: A set of configuration numbers
+        config_length: Length of the CA configuration
+        ngens: The number of generations for the CA to evolve
+
+    Returns:
+        orbit_df: The orbit expressed as a data frame
+    """
+    # create a blank numpy array of the correct length
+    orbit_data = np.empty(shape=(len(ensemble), config_length*(ngens+1)))
+
+    # create the variable names
+    var_names = [("x" + str(i) + "t" + str(j)) for i in range(config_length)
+                 for j in range(ngens + 1)]
+    
+    # create the orbits and write them to the .csv file
+    for k in range(len(ensemble)):
+        config_num = ensemble[k]
+        orbit = evolve(rule_num, radius, config_num, config_length, ngens)
+        # convert the row
+        orbit_row = [orbit[i][j] for i in range(config_length)
+                     for j in range(ngens + 1)]
+        # write orbit_row to the place in the numpy array
+        orbit_data[k] = orbit_row
+
+    orbit_df = pd.DataFrame(orbit_data, index=ensemble, columns=var_names)
+    return orbit_df
+
+
+def ensemble_to_csv(rule_num, radius, ensemble, config_length, ngens, filename):
+    """
+    Applies a given rule to an ensemble (set of configurations)
+    and records the result as a .csv file. 
+
+    Args:
+        rule_num: The CA rule number
+        radius: The neighborhood in which the CA evolves
+        ensemble: A set of configuration numbers
+        config_length: Length of the CA configuration
+        ngens: The number of generations for the CA to evolve
+        filename: A string for the filename (including path if eesired)
+
+    Returns:
+        orbit_csv: The orbit converted to a .csv file
+    """
+
+    orbit_df = ensemble_to_csv(rule_num, radius, ensemble, config_length, ngens)
+    orbit_csv = orbit_df.to_csv(filename)
+    return orbit_csv
 
 
 def evolve(rule_num, radius, config_num, config_length, ngens):
